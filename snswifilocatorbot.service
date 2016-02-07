@@ -1,0 +1,14 @@
+[Unit]
+Description=SNS wifi locator telegram bot
+After=network.target
+ConditionPathExists==/opt/snswifilocatorbot
+
+[Service]
+ExecStart=/opt/snswifilocatorbot /etc/snswifilocatorbot.ini
+ExecReload=/bin/kill $MAINPID
+KillMode=process
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
