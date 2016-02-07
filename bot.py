@@ -4,6 +4,7 @@
 import sys
 import binascii
 import json
+import re
 
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
@@ -42,7 +43,15 @@ def init():
     
 
 
-def get_snmp_info(query_name="",query_location=""):
+def filter_snmp_info(query_name="",query_location=""):
+    infos = get_snmp_info()
+    return [ info for info in infos if query_name in info['name'].strip().lower() and query_location in info['name'].strip().lower() ]
+
+def regex_snmp_info(regex_name="",regex_location=""):
+    infos = get_snmp_info()
+    return [ info for info in infos if re.search(regex_name,info['name'],re.IGNORECASE) and re.search(regex_location,info['location'],re.IGNORECASE) ]
+             
+def get_snmp_info():
     global agentaddress
     global agentcommunity
     agentport = 161
@@ -92,8 +101,7 @@ def get_snmp_info(query_name="",query_location=""):
                 elif namehost.asTuple()[13] == 22:
                     os = str(valhost)
                 #if (query_location in location) and (query_name in name):
-            if (query_name in name.strip().lower()) and (query_location in location.strip().lower()):
-                infos.append( {'name':name,'mac':mac,'location':location,'rssi':rssi,'ssid':ssid,'os':os } )
+            infos.append( {'name':name,'mac':mac,'location':location,'rssi':rssi,'ssid':ssid,'os':os } )
     return infos
 
 def reply_start(bot,update):
@@ -110,7 +118,7 @@ def reply_name(bot,update,args):
         bot.sendMessage(chat_id=update.message.chat_id,text="Invalid number of parameters")
     else:
         name = args[0].split('@')[0].strip().lower()
-        infos = get_snmp_info(query_name=name)
+        infos = filter_snmp_info(query_name=name)
         if len(infos) > 0:
             text = '\n'.join([ ', '.join([ row[column] for column in ['name','location','os'] ]) for row in infos ])
         else:
@@ -122,13 +130,39 @@ def reply_location(bot,update,args):
         bot.sendMessage(chat_id=update.message.chat_id,text="Invalid number of parameters")
     else:
         location = args[0].strip().lower()
-        infos = get_snmp_info(query_location=location)
+        infos = filter_snmp_info(query_location=location)
         if len(infos) > 0:
             text = '\n'.join([ ', '.join([ row[column] for column in ['name','location','os'] ]) for row in infos ])
         else:
             text = 'Not found'
         bot.sendMessage(chat_id=update.message.chat_id,text=text)
 
+def reply_namex(bot,update,args):
+    if len(args) != 1:
+        bot.sendMessage(chat_id=update.message.chat_id,text="Invalid number of parameters")
+    else:
+        namex = args[0]
+        infos = regex_snmp_info(regex_name=namex)
+        if len(infos) > 0:
+            text = '\n'.join([ ', '.join([ row[column] for column in ['name','location','os'] ]) for row in infos ])
+        else:
+            text = 'Not found'
+        bot.sendMessage(chat_id=update.message.chat_id,text=text)
+
+def reply_locationx(bot,update,args):
+    if len(args) != 1:
+        bot.sendMessage(chat_id=update.message.chat_id,text="Invalid number of parameters")
+    else:
+        locationx = args[0]
+        infos = regex_snmp_info(regex_location=locationx)
+        if len(infos) > 0:
+            text = '\n'.join([ ', '.join([ row[column] for column in ['name','location','os'] ]) for row in infos ])
+        else:
+            text = 'Not found'
+        bot.sendMessage(chat_id=update.message.chat_id,text=text)
+
+
+        
 def reply_unknown(bot,update):
     bot.sendMessage(chat_id=update.message.chat_id,text="Command not found")
         
@@ -142,9 +176,11 @@ def main():
     updater.dispatcher.addUnknownTelegramCommandHandler(reply_unknown)
     updater.dispatcher.addTelegramCommandHandler('name', reply_name)
     updater.dispatcher.addTelegramCommandHandler('location', reply_location)
+    updater.dispatcher.addTelegramCommandHandler('namex', reply_namex)
+    updater.dispatcher.addTelegramCommandHandler('locationx', reply_locationx)
     print ("polling...")
     updater.start_polling()
-
+    updater.idle()
 
 
 
