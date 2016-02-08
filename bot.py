@@ -45,7 +45,7 @@ def init():
 
 def filter_snmp_info(query_name="",query_location=""):
     infos = get_snmp_info()
-    return [ info for info in infos if query_name in info['name'].strip().lower() and query_location in info['name'].strip().lower() ]
+    return [ info for info in infos if query_name in info['name'].strip().lower() and query_location in info['location'].strip().lower() ]
 
 def regex_snmp_info(regex_name="",regex_location=""):
     infos = get_snmp_info()
